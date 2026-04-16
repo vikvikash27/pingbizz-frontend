@@ -1,0 +1,67 @@
+PingBiz/
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                 # FastAPI app entry
+│   │
+│   │   ├── core/                   # Core system logic
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py           # Env + settings
+│   │   │   ├── security.py         # JWT, password hashing
+│   │   │   ├── rbac.py             # Role & permission map
+│   │   │   ├── logging.py          # Structured logging
+│   │
+│   │   ├── db/                     # Database layer
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py             # Declarative Base
+│   │   │   ├── session.py          # Async DB session
+│   │   │   ├── models.py           # SQLAlchemy models
+│   │   │   ├── init_db.py          # Seed users + roles
+│   │
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   ├── deps.py             # Auth / role dependencies
+│   │   │   ├── routes/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── auth.py          # Login / refresh / logout / me
+│   │   │   │   ├── users.py         # User mgmt (Admin only)
+│   │   │   │   ├── templates.py     # CRUD (RBAC enforced)
+│   │   │   │   ├── contacts.py
+│   │   │   │   ├── campaigns.py
+│   │   │   │   ├── deletion_requests.py
+│   │   │   │   ├── tickets.py       # Support → Tech escalation
+│   │
+│   │   ├── schemas/                # Pydantic schemas
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── user.py
+│   │   │   ├── template.py
+│   │   │   ├── contact.py
+│   │   │   ├── campaign.py
+│   │   │   ├── deletion_request.py
+│   │   │   ├── ticket.py
+│   │
+│   │   ├── services/               # Business logic
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── audit.py             # Audit logging
+│   │   │   ├── deletion_requests.py
+│   │   │   ├── tickets.py
+│   │
+│   │   ├── utils/
+│   │   │   ├── __init__.py
+│   │   │   ├── responses.py         # Unified API response format
+│   │   │   ├── errors.py            # Central error handling
+│
+│   ├── alembic/                     # DB migrations
+│   │   ├── env.py
+│   │   ├── script.py.mako
+│   │   └── versions/
+│   │
+│   ├── alembic.ini
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   ├── .env.example
+│
+├── docker-compose.yml               # Postgres + backend
+├── README.md

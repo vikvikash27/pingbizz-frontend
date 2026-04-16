@@ -1,0 +1,94 @@
+# README.md
+
+## PingBiz (Backend) - FastAPI + Postgres (Docker)
+
+### 1) Setup
+```bash
+cp backend/.env.example backend/.env
+docker compose up -d --build
+
+- docker compose restart backend
+
+Confirm containers are running
+- docker ps
+
+Check backend is working
+
+Open in browser:
+
+http://localhost:8000/health
+
+ll passwords: PingBiz@1234
+
+admin@pingbiz.local
+
+manager@pingbiz.local
+
+tech@pingbiz.local
+
+support@pingbiz.local
+
+Backend:
+
+http://localhost:8000/health
+
+2) Seeded Demo Users
+
+Password for all: PingBiz@1234
+
+admin@pingbiz.local
+ (ADMIN)
+
+manager@pingbiz.local
+ (MANAGER)
+
+tech@pingbiz.local
+ (TECHNICAL_OFFICER)
+
+support@pingbiz.local
+ (SUPPORT_ASSISTANT)
+
+ Postman Requests
+
+ Login
+
+    POST http://localhost:8000/api/auth/login
+
+    { "email": "admin@pingbiz.local", "password": "PingBiz@1234" }
+
+
+
+Me
+
+GET http://localhost:8000/api/auth/me
+
+Header:
+Authorization: Bearer <access_token>
+
+Manager creates deletion request
+
+POST http://localhost:8000/api/deletion-requests
+
+{ "resource_type": "TEMPLATE", "resource_id": "<uuid>", "reason": "Wrong template" }
+
+Admin approves deletion request
+
+POST http://localhost:8000/api/deletion-requests/
+<request_uuid>/approve
+
+{ "decision_reason": "Approved" }
+
+Support creates ticket
+
+POST http://localhost:8000/api/tickets
+
+{ "title": "Customer cannot receive messages", "description": "Issue details...", "priority": "HIGH" }
+
+
+
+
+
+
+
+curl -s http://localhost:8000/api/internal/orgs \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiZTk2MzJjNS1hZmI2LTQ1MTAtYjViNS1jZjUzZGVkMWY0ZjYiLCJyb2xlIjoiU1VQRVJfQURNSU4iLCJ0eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5NzIwNTExfQ.kS2YMKyAFccKP43Brj5Irhc5BnaMRSa09QvyWSGCcJM" | python3 -m json.tool

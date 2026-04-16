@@ -1,0 +1,155 @@
+# # backend/app/main.py
+# from fastapi import FastAPI, Request
+# from fastapi.middleware.cors import CORSMiddleware
+# from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+# from slowapi import Limiter
+# from slowapi.util import get_remote_address
+# from slowapi.errors import RateLimitExceeded
+# from fastapi.responses import JSONResponse
+# ## Corrected import to use the centralized limiter
+# from slowapi.middleware import SlowAPIMiddleware
+# from app.core.limiting import limiter
+
+
+# from app.core.config import settings
+# from app.core.logging import configure_logging
+# from app.api.routes import auth, users, templates, contacts, campaigns, deletion_requests, tickets
+# from app.utils.errors import AppError, app_error_handler, http_error_handler
+# from app.utils.responses import ok
+
+
+# limiter = Limiter(key_func=get_remote_address)
+
+
+# def create_app() -> FastAPI:
+#     configure_logging()
+#     app = FastAPI(title="PingBiz API", version="1.0.0")
+
+#     origins = [o.strip()
+#                for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+#     app.add_middleware(
+#         CORSMiddleware,
+#         allow_origins=origins or ["*"],
+#         allow_credentials=True,
+#         allow_methods=["*"],
+#         allow_headers=["*"],
+#     )
+
+#     if settings.ENV.lower() == "production" and settings.FORCE_HTTPS:
+#         app.add_middleware(HTTPSRedirectMiddleware)
+
+#     app.state.limiter = limiter
+#     app.add_exception_handler(RateLimitExceeded, lambda r, e: JSONResponse(status_code=429, content={
+#                               "success": False, "error": {"code": "RATE_LIMITED", "message": "Too many requests"}}))
+#     app.add_exception_handler(AppError, app_error_handler)
+#     app.add_exception_handler(Exception, http_error_handler)
+
+#     @app.get("/health")
+#     async def health():
+#         return ok({"status": "ok"})
+
+#     app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+#     app.include_router(users.router, prefix="/api/users", tags=["users"])
+#     app.include_router(
+#         templates.router, prefix="/api/templates", tags=["templates"])
+#     app.include_router(
+#         contacts.router, prefix="/api/contacts", tags=["contacts"])
+#     app.include_router(
+#         campaigns.router, prefix="/api/campaigns", tags=["campaigns"])
+#     app.include_router(deletion_requests.router,
+#                        prefix="/api/deletion-requests", tags=["deletion-requests"])
+#     app.include_router(tickets.router, prefix="/api/tickets", tags=["tickets"])
+
+#     return app
+
+
+# app = create_app()
+
+
+
+
+
+
+
+
+# backend/app/main.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.routes import auth, users, templates, contacts, campaigns, deletion_requests, tickets
+from app.api.internal import internal_router
+
+app = FastAPI(title="PingBiz API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Tenant/customer routes
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(templates.router)
+app.include_router(contacts.router)
+app.include_router(campaigns.router)
+app.include_router(deletion_requests.router)
+app.include_router(tickets.router)
+
+# Internal (SUPER_ADMIN)
+app.include_router(internal_router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
+def create_app() -> FastAPI:
+    configure_logging()
+    app = FastAPI(title="PingBiz API", version="1.0.0")
+
+    origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins or ["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    if settings.ENV.lower() == "production" and settings.FORCE_HTTPS:
+        app.add_middleware(HTTPSRedirectMiddleware)
+
+    # ✅ SlowAPI
+    app.state.limiter = limiter
+    app.add_middleware(SlowAPIMiddleware)
+
+    app.add_exception_handler(
+        RateLimitExceeded,
+        lambda r, e: JSONResponse(
+            status_code=429,
+            content={"success": False, "error": {"code": "RATE_LIMITED", "message": "Too many requests"}},
+        ),
+    )
+    app.add_exception_handler(AppError, app_error_handler)
+    app.add_exception_handler(Exception, http_error_handler)
+
+    @app.get("/health")
+    async def health():
+        return ok({"status": "ok"})
+
+    app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+    app.include_router(users.router, prefix="/api/users", tags=["users"])
+    app.include_router(templates.router, prefix="/api/templates", tags=["templates"])
+    app.include_router(contacts.router, prefix="/api/contacts", tags=["contacts"])
+    app.include_router(campaigns.router, prefix="/api/campaigns", tags=["campaigns"])
+    app.include_router(deletion_requests.router, prefix="/api/deletion-requests", tags=["deletion-requests"])
+    app.include_router(tickets.router, prefix="/api/tickets", tags=["tickets"])
+
+    return app
+
+
+app = create_app()

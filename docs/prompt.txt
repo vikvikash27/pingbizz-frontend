@@ -1,0 +1,135 @@
+You are a senior backend engineer. Build a production-ready backend for “PingBiz” (WhatsApp Automation for Small Business) with multi-level login and strict server-side RBAC, including a deletion approval workflow and a support query/ticket escalation flow.
+
+TECH STACK (must follow):
+- Node.js 20+
+- Express
+- TypeScript
+- PostgreSQL
+- Prisma ORM
+- JWT auth (access + refresh tokens)
+- Zod for request validation
+- bcrypt for password hashing
+- dotenv for env vars
+- Winston/Pino logging (choose one)
+- CORS enabled
+- Helmet enabled
+- Rate limiting for auth endpoints
+
+OUTPUT RULES:
+1) Output ONLY code with file paths. No explanations.
+2) Provide a complete directory structure.
+3) Include all required files to run locally (package.json, tsconfig, prisma schema, env example, scripts).
+4) Include seed script to create 4 demo users (Admin, Manager, Technical Officer, Support Assistant).
+5) All authorization MUST be enforced on the server. Frontend hiding buttons is not security.
+6) Use clean architecture: routes → controllers → services → repositories (or prisma layer) + middlewares.
+7) Return consistent JSON responses and error format.
+
+BUSINESS REQUIREMENTS:
+
+A) Authentication
+- Login with email + password
+- JWT access token (short TTL) + refresh token (long TTL)
+- Refresh endpoint rotates refresh tokens
+- Logout endpoint revokes refresh token
+- “me” endpoint returns current user profile + role
+
+B) Roles (RBAC)
+Roles:
+1. ADMIN: can do anything
+2. MANAGER: can create/read/update almost everything BUT cannot delete directly; must request deletion approval from Admin
+3. TECHNICAL_OFFICER: can read/update and manage operational configs but cannot delete
+4. SUPPORT_ASSISTANT: can view messages, reply when needed, create “support queries/tickets” and assign to Technical Officer; cannot edit system configs; cannot delete
+
+Implement:
+- Role enum
+- Authorization middleware: requireAuth + requireRole/requirePermission
+- Permission map in code (simple RBAC) + ability to extend later
+
+C) Deletion Approval Workflow (IMPORTANT)
+- Manager cannot delete resources directly.
+- Instead they create a DeletionRequest with:
+  - resourceType (e.g. TEMPLATE, CONTACT, CAMPAIGN, AUTOMATION_FLOW)
+  - resourceId
+  - reason
+  - requestedBy
+  - status: PENDING | APPROVED | REJECTED
+  - approvedBy, approvedAt, rejectedAt, decisionReason
+- Admin endpoints:
+  - list pending deletion requests
+  - approve request → perform deletion (soft delete preferred)
+  - reject request
+- Technical Officer and Support Assistant can NEVER request deletions (unless explicitly allowed; default NO).
+- Every deletion approval or rejection is written into AuditLog.
+
+D) Support Query / Ticket Escalation
+- SUPPORT_ASSISTANT can create a Ticket/Query to escalate to TECHNICAL_OFFICER
+Ticket fields:
+- id, title, description, priority (LOW/MED/HIGH), status (OPEN/IN_PROGRESS/RESOLVED/CLOSED)
+- createdBy (support user)
+- assignedTo (technical officer user)
+- relatedConversationId (string, optional)
+- customerContactId (optional)
+- internalNotes (array or separate table)
+Actions:
+- Support Assistant: create ticket, view own tickets, assign ticket to Technical Officer (or request assignment), add comment
+- Technical Officer: view assigned tickets, update status, add technical notes, resolve/close
+- Manager/Admin: view all tickets; Admin can reassign anyone
+
+E) Audit Logging
+- Record sensitive actions:
+  - login, logout
+  - user creation/role change
+  - deletion requested/approved/rejected
+  - ticket status changes
+- AuditLog fields: actorId, action, entityType, entityId, metadata JSON, ip, userAgent, createdAt
+
+F) Example Managed Resources (CRUD)
+Create minimal CRUD endpoints (with RBAC) for:
+1) Templates (WhatsApp template configs)
+2) Contacts
+3) Campaigns (basic fields only)
+Rules:
+- Admin: full CRUD
+- Manager: create/read/update; delete via deletion request
+- Technical Officer: read/update (no delete)
+- Support Assistant: read only (contacts/messages), and can create Tickets; no templates/campaign edits
+
+G) Project Structure (required)
+backend/
+  src/
+    app.ts
+    server.ts
+    config/
+    routes/
+    controllers/
+    services/
+    middlewares/
+    utils/
+    validators/
+    prisma/
+  prisma/
+    schema.prisma
+    seed.ts
+  package.json
+  tsconfig.json
+  .env.example
+  README.md
+
+H) Developer Experience
+- npm scripts: dev, build, start, prisma:migrate, prisma:seed
+- Provide README with setup steps:
+  - create DB
+  - set env
+  - migrate
+  - seed
+  - run
+- Include Postman/Thunder client example JSON requests in README.
+
+IMPLEMENTATION DETAILS:
+- Use soft delete for Templates/Contacts/Campaigns: add deletedAt field; hide deleted records by default.
+- For deletion approval, approving should set deletedAt; rejecting does nothing.
+- Ensure Prisma schema includes relations for requestedBy/approvedBy, assignedTo, etc.
+- Input validation with Zod on every write route.
+- Use centralized error handler.
+
+Now generate the complete codebase with file paths and full contents for every file.
